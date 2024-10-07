@@ -84,5 +84,29 @@ def load_2d_3d(dicom_folder, output_path = None):
         sitk.WriteImage(image, out_path)
     return image
 
+def plot_contour(mask_for_cv, ax, color = "red", label = None):
+    contours, _ = cv2.findContours(mask_for_cv, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    ax.plot([], [], color = color, linewidth = 2, label = label)
+    for c in contours:
+        
+        close_c = np.vstack([c, c[0:1]])
+        ax.plot(close_c[:,0,0], close_c[:,0,1], color = color, linewidth = 2)
 
-  
+    return contours
+    
+def plot_mask(mask_for_cv, ax, color = "red", label = None):
+    contours, _ = cv2.findContours(mask_for_cv, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    ax.plot([], [], color = color, linewidth = 2, label = label)
+    for c in contours:
+        
+        close_c = np.vstack([c, c[0:1]])
+        ax.plot(close_c[:,0,0], close_c[:,0,1], color = color, linewidth = 2)
+
+    return contours
+
+def plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
+    masked_mask = np.ma.masked_where(mask_for_cv == 0, mask_for_cv)
+    ax.imshow(masked_mask, alpha=alpha, cmap = color, label = None, vmin = 0, vmax=1)
+    return masked_mask
+
+
