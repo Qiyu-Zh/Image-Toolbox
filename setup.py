@@ -8,7 +8,9 @@ setup(
     install_requires=[         # List of dependencies
       "SimpleITK",
       "ipywidgets",
-      "matplotlib"
+      "matplotlib",
+      "numpy",
+      "opencv-python"
     ],
     classifiers=[              # Metadata
         "Programming Language :: Python :: 3",
