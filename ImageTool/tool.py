@@ -42,8 +42,8 @@ def crop_with_bbox(image_path, bbox, output_path = None):
     # Extract start index and size from the bounding box
     adjusted_bbox = []
     for i in range(3):
-        start = bbox[i][0] if bbox[i][0] >= 0 else image_size[i] + bbox[i][0]
-        end = bbox[i][1] if bbox[i][1] >= 0 else image_size[i] + bbox[i][1]
+        start = bbox[i][0] if bbox[i][0] >= 0 else image_size[i] + bbox[i][0] + 1
+        end = bbox[i][1] if bbox[i][1] >= 0 else image_size[i] + bbox[i][1] + 1
         adjusted_bbox.append((start, end))
     bbox = adjusted_bbox
     start_index = [bbox[i][0] for i in range(3)]  # Start index (x_min, y_min, z_min)
