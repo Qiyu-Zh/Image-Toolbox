@@ -94,7 +94,7 @@ def plot_contour(mask_for_cv, ax, color = "red", label = None):
 
     return contours
     
-def plot_mask(mask_for_cv, ax, color = "red", label = None):
+def plot_contour(mask_for_cv, ax, color = "red", label = None):
     contours, _ = cv2.findContours(mask_for_cv, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     ax.plot([], [], color = color, linewidth = 2, label = label)
     for c in contours:
