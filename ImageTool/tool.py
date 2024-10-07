@@ -11,14 +11,9 @@ def get_contour(binary_mask):
 
     # Multiply by 255 to convert it to the format expected by OpenCV (0s and 255s)
     mask_for_cv = binary_mask.astype(np.uint8) * 255
-    # Find contours in the binary mask
     contours, _ = cv2.findContours(mask_for_cv, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-    # Create a blank binary mask to draw the contours
     contour_only_mask = np.zeros_like(binary_mask).copy()
-    # Draw contours on the blank mask with value 1 for the contour lines
-    cv2.drawContours(contour_only_mask, contours, -1, 1, 1)  # Use 1 for binary contour and thickness 1
-    # Output the contour-only mask (strictly binary, 0s and 1s)
+    cv2.drawContours(contour_only_mask, contours, -1, 1, 1)  
     return contour_only_mask
 
 
