@@ -29,7 +29,7 @@ def resize(image_path, target_size, output_path = None):
     resampler = sitk.ResampleImageFilter()
     resampler.SetSize(target_size)
     resampler.SetOutputSpacing(new_spacing)
-    resampler.SetInterpolator(sitkBSpline2)
+    resampler.SetInterpolator(sitk.sitkBSpline2)
     resampler.SetOutputDirection(image.GetDirection())
     resampler.SetOutputOrigin(image.GetOrigin())
     resized_image = resampler.Execute(image)
