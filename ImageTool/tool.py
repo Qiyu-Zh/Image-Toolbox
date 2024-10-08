@@ -34,7 +34,7 @@ def resize(image_path, target_size, output_path = None):
     resampler.SetOutputOrigin(image.GetOrigin())
     resized_image = resampler.Execute(image)
     if output_path:
-        sitk.WriteImage(resized_image, out_path)
+        sitk.WriteImage(resized_image, output_path)
     return resized_image
   
 def crop_with_bbox(image_path, bbox, output_path = None):
