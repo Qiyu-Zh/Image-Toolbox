@@ -64,7 +64,7 @@ def crop_with_bbox(image_path, bbox, output_path = None):
     cropped_image.SetOrigin(new_origin)
     cropped_image.SetDirection(image.GetDirection())
     cropped_image.SetSpacing(image.GetSpacing())
-    if out_path:
+    if output_path:
         sitk.WriteImage(cropped_image, output_path)
     return cropped_image
   
