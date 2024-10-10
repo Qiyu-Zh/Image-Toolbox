@@ -6,7 +6,7 @@ from ipywidgets import interact
 from ipywidgets.widgets import IntSlider
 import matplotlib.pyplot as plt
 import cv2
-
+from totalsegmentator.python_api import totalsegmentator
 def get_contour(binary_mask):
 
     # Multiply by 255 to convert it to the format expected by OpenCV (0s and 255s)
@@ -38,6 +38,7 @@ def resize(image_path, target_size, output_path = None):
     return resized_image
   
 def crop_with_bbox(image_path, bbox, output_path = None):
+    bbox = np.array(bbox, dtype= int).tolist()
     image = sitk.ReadImage(image_path)
     # Extract start index and size from the bounding box
     adjusted_bbox = []
