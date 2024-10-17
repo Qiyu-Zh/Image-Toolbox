@@ -98,9 +98,11 @@ def plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
     return masked_mask
 
 
-def interactive_display(img_list, name = ""):
+def interactive_display(img_list, name = "", read_dcm = False):
 
     max_slices_contrast = img_list[0].shape[2]
+    if read_dcm:
+        img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
 
     contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
 
@@ -115,6 +117,6 @@ def display_slice(contrast_slice_index, img_list, name):
     fig.suptitle(name + f'  Slice {contrast_slice_index}')
     for i, img in enumerate(img_list):
         if img is not None:
-            axes[i].imshow(img[:,:,contrast_slice_index], cmap='jet', vmax = 300)
+            axes[i].imshow(img[:,:,max(img.shape[2] - 1, contrast_slice_index)], cmap='jet', vmax = 300)
             axes[i].axis('off')
     plt.show()
