@@ -146,8 +146,12 @@ def display_slice(contrast_slice_index, img_list, name):
             axes[i].axis('off')
     plt.show()
 
-def lists_display(img_lists, name = ""):
 
+def lists_display(img_lists, name = None, titles = None):
+    if name == None:
+        name = ""
+    if titles == None:
+        titles = [""] * len(img_lists)
     if isinstance(img_lists[0], str):
         img_lists = [sorted([os.path.join(folder, path) for path in os.listdir(folder) if path.endswith('.nii')]) for folder in img_lists]
         
@@ -162,18 +166,26 @@ def lists_display(img_lists, name = ""):
 
     contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
     list_idx_slider = widgets.IntSlider(min=0, max=max_num-1, step=1, value=0, description='img_idx:')
-    def display_slice(contrast_slice_index, list_idx_slider, img_lists, name, vmaxs):
-        n = len(img_lists)
+    def display_slice(contrast_slice_index, list_idx_slider):
+        n = max(len(img_lists), 2)
         fig, axes = plt.subplots(1, n, figsize=(6*n, 6))
         fig.suptitle(name + f'  Slice {contrast_slice_index}')
         for i, imgs in enumerate(img_lists):
             if imgs is not None:
+                
                 img = imgs[min(len(imgs),list_idx_slider)]
                 axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap='jet', vmax = vmaxs[i])
                 axes[i].axis('off')
+                axes[i].set_title(titles[i])
         plt.show()
 
     def update(list_idx, contrast_slice_index):
+
+        display_slice(contrast_slice_index, list_idx)
+
+    widgets.interact(update, contrast_slice_index=contrast_slice_slider, list_idx = list_idx_slider)
+    
+
 
         display_slice(contrast_slice_index, list_idx, img_lists, name, vmaxs)
 
