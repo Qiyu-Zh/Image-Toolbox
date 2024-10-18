@@ -98,11 +98,36 @@ def plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
     return masked_mask
 
 
-def interactive_display(img_list, name = "", read_dcm = False):
+def list_display(img_list, name = "", read_dcm = False):
 
-    max_slices_contrast = img_list[0].shape[2]
+    
     if read_dcm:
         img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
+    max_slices_contrast = max(img_list, key = lambda x: x.shape[0]).shape[0]
+
+    contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
+    def display_slice(contrast_slice_index, img_list, name):
+        n = len(img_list)
+        fig, axes = plt.subplots(1, n, figsize=(6*n, 6))
+        fig.suptitle(name + f'  Slice {contrast_slice_index}')
+        for i, img in enumerate(img_list):
+            if img is not None:
+                axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap='jet', vmax = 300)
+                axes[i].axis('off')
+        plt.show()
+    def update(contrast_slice_index):
+
+        display_slice(contrast_slice_index, img_list, name)
+
+    widgets.interact(update, contrast_slice_index=contrast_slice_slider)
+
+
+def folders_display(img_list, name = "", read_dcm = False):
+
+    
+    if read_dcm:
+        img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
+    max_slices_contrast = max(img_list, key = lambda x: x.shape[0]).shape[0]
 
     contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
 
@@ -117,6 +142,39 @@ def display_slice(contrast_slice_index, img_list, name):
     fig.suptitle(name + f'  Slice {contrast_slice_index}')
     for i, img in enumerate(img_list):
         if img is not None:
-            axes[i].imshow(img[:,:,max(img.shape[2] - 1, contrast_slice_index)], cmap='jet', vmax = 300)
+            axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap='jet', vmax = 300)
             axes[i].axis('off')
     plt.show()
+
+def lists_display(img_lists, name = ""):
+
+    if isinstance(img_lists[0], str):
+        img_lists = [sorted([os.path.join(folder, path) for path in os.listdir(folder) if path.endswith('.nii')]) for folder in img_lists]
+        
+    if isinstance(img_lists[0][0], str):
+        img_lists = [[sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list] for img_list in img_lists]
+    vmaxs = [300] * len(img_lists)
+    for i in range(len(img_lists)):
+        if np.max(img_lists[i][0]) < 50:
+            vmaxs[i] = np.max(img_lists[i][0])
+    max_slices_contrast = max(img_lists[0], key = lambda x: x.shape[0]).shape[0]
+    max_num = len(max(img_lists, key = lambda x: len(x)))
+
+    contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
+    list_idx_slider = widgets.IntSlider(min=0, max=max_num-1, step=1, value=0, description='img_idx:')
+    def display_slice(contrast_slice_index, list_idx_slider, img_lists, name, vmaxs):
+        n = len(img_lists)
+        fig, axes = plt.subplots(1, n, figsize=(6*n, 6))
+        fig.suptitle(name + f'  Slice {contrast_slice_index}')
+        for i, imgs in enumerate(img_lists):
+            if imgs is not None:
+                img = imgs[min(len(imgs),list_idx_slider)]
+                axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap='jet', vmax = vmaxs[i])
+                axes[i].axis('off')
+        plt.show()
+
+    def update(list_idx, contrast_slice_index):
+
+        display_slice(contrast_slice_index, list_idx, img_lists, name, vmaxs)
+
+    widgets.interact(update, contrast_slice_index=contrast_slice_slider, list_idx = list_idx_slider)
