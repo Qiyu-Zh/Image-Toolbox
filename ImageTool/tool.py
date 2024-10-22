@@ -6,6 +6,8 @@ from ipywidgets import interact
 from ipywidgets.widgets import IntSlider
 import matplotlib.pyplot as plt
 import cv2
+import os 
+import shutil
 from totalsegmentator.python_api import totalsegmentator
 def get_contour(binary_mask):
 
@@ -190,3 +192,53 @@ def lists_display(img_lists, name = None, titles = None):
         display_slice(contrast_slice_index, list_idx, img_lists, name, vmaxs)
 
     widgets.interact(update, contrast_slice_index=contrast_slice_slider, list_idx = list_idx_slider)
+
+def make_if_dont_exist(folder_path,overwrite=False):
+    """
+    creates a folder if it does not exists
+    input: 
+    folder_path : relative path of the folder which needs to be created
+    over_write :(default: False) if True overwrite the existing folder 
+    """
+    if os.path.exists(folder_path):
+        if overwrite:
+            shutil.rmtree(folder_path)
+            os.makedirs(folder_path)
+    else:
+        os.makedirs(folder_path)
+def make_if_dont_exist(folder_path,overwrite=False):
+    """
+    creates a folder if it does not exists
+    input: 
+    folder_path : relative path of the folder which needs to be created
+    over_write :(default: False) if True overwrite the existing folder 
+    """
+    if os.path.exists(folder_path):
+        if overwrite:
+            shutil.rmtree(folder_path)
+            os.makedirs(folder_path)
+    else:
+        os.makedirs(folder_path)
+def load_3d_2d(dcm_file, output_path):
+    make_if_dont_exist(output_path)
+    # Read the 3D DICOM image using SimpleITK
+    image_3d = sitk.ReadImage(dcm_file)
+    # Convert the 3D image to a NumPy array
+    image_array_3d = sitk.GetArrayFromImage(image_3d)
+    # The shape of the array is (slices, height, width)
+    print(f"Shape of the 3D image array: {image_array_3d.shape}")
+    spacing = image_3d.GetSpacing()
+    # Loop through the slices and process each 2D slice
+    for i in range(image_array_3d.shape[0]):
+        # Extract 2D slice from the NumPy array
+        slice_2d = image_array_3d[i, :, :]
+        # Convert the 2D NumPy array back to a SimpleITK image
+        slice_image = sitk.GetImageFromArray(slice_2d)
+        origin = list(image_3d.GetOrigin())
+        origin[2] += i * image_3d.GetSpacing()[2]  # Adjust the Z-axis position for each slice
+        slice_image.SetOrigin(origin)
+        slice_image.SetSpacing((spacing[0], spacing[1]))
+        # Set the Instance Number (or other tags) to reflect the correct slice
+        instance_number = i + 1  # Instance numbers usually start at 1
+        # Save the slice as a 2D DICOM file
+        sitk.WriteImage(slice_image, os.path.join(output_path, os.path.splitext(os.path.basename(dcm_file))[0] + f"_{i}.nii"))
