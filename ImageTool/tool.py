@@ -188,11 +188,6 @@ def lists_display(img_lists, name = None, titles = None):
     widgets.interact(update, contrast_slice_index=contrast_slice_slider, list_idx = list_idx_slider)
     
 
-
-        display_slice(contrast_slice_index, list_idx, img_lists, name, vmaxs)
-
-    widgets.interact(update, contrast_slice_index=contrast_slice_slider, list_idx = list_idx_slider)
-
 def make_if_dont_exist(folder_path,overwrite=False):
     """
     creates a folder if it does not exists
