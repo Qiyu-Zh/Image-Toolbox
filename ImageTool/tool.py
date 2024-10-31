@@ -243,4 +243,4 @@ def load_3d_2d(dcm_file, output_path):
 def ssim(np_image1, np_image2):
     
     data_range = np.max([np_image1.max(), np_image2.max()]) - np.min([np_image1.min(), np_image2.min()])
-    return ssim(dcm_prev, dicom_image, data_range=data_range)
+    return ssim(np_image1, np_image2, data_range=data_range)
