@@ -9,7 +9,7 @@ import cv2
 import os 
 import shutil
 from totalsegmentator.python_api import totalsegmentator
-from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import structural_similarity 
 def get_contour(binary_mask):
 
     # Multiply by 255 to convert it to the format expected by OpenCV (0s and 255s)
@@ -243,4 +243,4 @@ def load_3d_2d(dcm_file, output_path):
 def ssim(np_image1, np_image2):
     
     data_range = np.max([np_image1.max(), np_image2.max()]) - np.min([np_image1.min(), np_image2.min()])
-    return ssim(np_image1, np_image2, data_range=data_range)
+    return structural_similarity(np_image1, np_image2, data_range=data_range)
