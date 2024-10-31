@@ -12,7 +12,8 @@ setup(
       "ipywidgets",
       "matplotlib",
       "numpy",
-      "opencv-python"
+      "opencv-python",
+      "scikit-image"
     ],
     classifiers=[              # Metadata
         "Programming Language :: Python :: 3",
