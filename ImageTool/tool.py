@@ -80,7 +80,7 @@ def load_2d_3d(dicom_folder, output_path = None):
     reader.SetFileNames(dicom_files)
     image = reader.Execute()
     if output_path:
-        sitk.WriteImage(image, out_path)
+        sitk.WriteImage(image, output_path)
     return image
 
 def plot_contour(mask_for_cv, ax, color = "red", label = None):
