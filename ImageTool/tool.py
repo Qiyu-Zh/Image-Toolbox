@@ -25,7 +25,14 @@ def erode(mask = np.ones((6, 6)), size = 2):
     # Erode the mask
     eroded_mask = ndimage.binary_erosion(mask, structure).astype(mask.dtype)
     return eroded_mask
-    
+
+def calculate_mean_hu(dcm_rest, bolus_rest_init):
+    slice_idx = np.argmax([tool.ssim(dcm_rest[:,:,i], bolus_rest_init) for i in range(dcm_rest.shape[2])])
+    reg_ss_rest = ants.registration(fixed = ants.from_numpy(dcm_rest[:, :, slice_idx]) , moving = ants.from_numpy(bolus_rest_init), type_of_transform ='SyNAggro')['warpedmovout']
+    mask = erode(dcm_mask_rest[:, :, slice_idx], size = 2).astype(bool)
+    HD_rest = np.mean(reg_ss_rest[:][mask])
+    return HD_rest
+
 def resize(image_path, target_size, output_path = None):
     image = sitk.ReadImage(image_path)
     original_size = image.GetSize()  
