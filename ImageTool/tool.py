@@ -5,6 +5,7 @@ import numpy as np
 from ipywidgets import interact
 from ipywidgets.widgets import IntSlider
 import matplotlib.pyplot as plt
+from scipy import ndimage
 import cv2
 import os 
 import shutil
@@ -19,7 +20,12 @@ def get_contour(binary_mask):
     cv2.drawContours(contour_only_mask, contours, -1, 1, 1)  
     return contour_only_mask
 
-
+def erode(mask = np.ones((6, 6)), size = 2):
+    structure = np.ones((2*size + 1, 2*size + 1))
+    # Erode the mask
+    eroded_mask = ndimage.binary_erosion(mask, structure).astype(mask.dtype)
+    return eroded_mask
+    
 def resize(image_path, target_size, output_path = None):
     image = sitk.ReadImage(image_path)
     original_size = image.GetSize()  
