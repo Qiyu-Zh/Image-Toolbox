@@ -27,8 +27,11 @@ def erode(mask = np.ones((6, 6)), size = 2):
     return eroded_mask
 
 def calculate_mean_hu(dcm_rest, dcm_mask_rest, bolus_rest_init):
-    slice_idx = np.argmax([tool.ssim(dcm_rest[:,:,i], bolus_rest_init) for i in range(dcm_rest.shape[2])])
+    idxes =  [i for i in range(dcm_rest.shape[2]) if np.sum(dcm_mask_rest[:, :, i]) > 100]
+    slice_idx = max([(tool.ssim(dcm_rest[:,:,i], bolus_rest_init), i) for i in idxes])[1]
+    print(slice_idx)
     reg_ss_rest = ants.registration(fixed = ants.from_numpy(dcm_rest[:, :, slice_idx]) , moving = ants.from_numpy(bolus_rest_init), type_of_transform ='SyNAggro')['warpedmovout']
+    print(slice_idx, np.sum(dcm_mask_rest[:, :, slice_idx]))
     mask = erode(dcm_mask_rest[:, :, slice_idx], size = 2).astype(bool)
     HD_rest = np.mean(reg_ss_rest[:][mask])
     return HD_rest
