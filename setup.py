@@ -1,6 +1,4 @@
 from setuptools import setup, find_packages
-import os
-os.system("pip install git+https://github.com/Qiyu-Zh/TotalSegmentator_Crop.git")
 
 setup(
     name='Image-Toolbox',
