@@ -259,3 +259,10 @@ def ssim(np_image1, np_image2):
     
     data_range = np.max([np_image1.max(), np_image2.max()]) - np.min([np_image1.min(), np_image2.min()])
     return structural_similarity(np_image1, np_image2, data_range=data_range)
+    
+def delete_is_exist(file_path):
+    if os.path.exists(file_path):
+        os.remove(file_path)
+        print(f"File {file_path} has been deleted.")
+    else:
+        print(f"File {file_path} does not exist.")
