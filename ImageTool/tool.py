@@ -10,6 +10,7 @@ import cv2
 import os 
 import shutil
 from skimage.metrics import structural_similarity 
+import ants
 def get_contour(binary_mask):
 
     # Multiply by 255 to convert it to the format expected by OpenCV (0s and 255s)
@@ -266,3 +267,16 @@ def delete_is_exist(file_path):
         print(f"File {file_path} has been deleted.")
     else:
         print(f"File {file_path} does not exist.")
+
+def sitk2ant(img, reverse = False):
+    if reverse == True:
+        ants.image_write(img, "tmp.nii")
+        dcm = sitk.ReadImage("tmp.nii")
+        delete_if_exist("tmp.nii")
+        return dcm
+    else:
+        sitk.WriteImage(img, "tmp.nii")
+        dcm = ants.image_read("tmp.nii")
+        delete_if_exist("tmp.nii")
+        return dcm
+    
