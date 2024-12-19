@@ -9,7 +9,6 @@ from scipy import ndimage
 import cv2
 import os 
 import shutil
-from totalsegmentator.python_api import totalsegmentator
 from skimage.metrics import structural_similarity 
 def get_contour(binary_mask):
 
