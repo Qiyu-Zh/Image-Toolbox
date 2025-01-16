@@ -280,3 +280,42 @@ def sitk2ant(img, reverse = False):
         delete_if_exist("tmp.nii")
         return dcm
     
+def plot3d(CFR_crop, vmax = 3.5, sample_rate = 5):
+    matplotlib.use('module://ipympl.backend_nbagg')
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    x, y, z = np.indices(CFR_crop.shape)
+
+    # Filter the coordinates and CFR values using the mask
+    mask_indices = CFR_crop[:].nonzero()
+    x_masked = x[mask_indices]
+    y_masked = y[mask_indices]
+    z_masked = z[mask_indices]
+    CFR_masked = CFR_crop[mask_indices]
+
+    x_masked = x_masked[::sample_rate]
+    y_masked = y_masked[::sample_rate]
+    z_masked = z_masked[::sample_rate]
+    CFR_masked = CFR_masked[::sample_rate]
+
+    ax.set_xlabel("X-axis")
+    ax.set_ylabel("Y-axis")
+    ax.set_zlabel("Z-axis")
+    ax.set_title("Interactive 3D CFR Visualization")
+    # Plot only the masked values
+    scatter = ax.scatter(
+        x_masked,
+        y_masked,
+        z_masked,
+        c=CFR_masked,
+        cmap="jet",
+        vmin=0,
+        vmax=vmax,
+        s=1
+    )
+
+    # Add a colorbar and adjust its position
+    colorbar = fig.colorbar(scatter, ax=ax, shrink=0.6, aspect=15, pad=0.1)
+    colorbar.set_label("CFR Intensity")
+    plt.show()
