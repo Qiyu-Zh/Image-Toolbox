@@ -7,6 +7,7 @@ from ipywidgets.widgets import IntSlider
 import matplotlib.pyplot as plt
 from scipy import ndimage
 import cv2
+import matplotlib
 import os 
 import shutil
 from skimage.metrics import structural_similarity 
