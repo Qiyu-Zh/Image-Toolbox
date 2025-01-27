@@ -11,7 +11,9 @@ setup(
       "matplotlib",
       "numpy",
       "opencv-python",
-      "scikit-image"
+      "scikit-image",
+      "antspyx",
+      "monai"
     ],
     classifiers=[              # Metadata
         "Programming Language :: Python :: 3",
