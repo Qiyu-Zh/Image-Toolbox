@@ -12,6 +12,20 @@ import os
 import shutil
 from skimage.metrics import structural_similarity 
 import ants
+import monai
+def get_HU_error(y_pred, y, percentile = None, onehot = False, n_classes = None):
+    def get_onehot(label, n_classes):
+        one_hot = np.eye(n_classes)[label]  # Shape: (1, 32, 32, 32, 6)
+        one_hot = one_hot.transpose(3, 0, 1, 2)
+        one_hot = np.expand_dims(one_hot, axis=0)
+
+        return one_hot
+        
+    if onehot is False:
+        y = get_onehot(y, n_classes)  # Shape: (1, 32, 32, 32, 6)
+        y_pred = get_onehot(y_pred, n_classes) 
+    return monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, distance_metric='euclidean', percentile=percentile, directed=False, spacing=None)
+    
 def get_contour(binary_mask):
 
     # Multiply by 255 to convert it to the format expected by OpenCV (0s and 255s)
