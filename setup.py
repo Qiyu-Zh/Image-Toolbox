@@ -9,11 +9,12 @@ setup(
       "SimpleITK",
       "ipywidgets",
       "matplotlib",
-      "numpy",
+      "numpy==1.25",
       "opencv-python",
       "scikit-image",
-      "antspyx",
-      "monai"
+      "antspyx==0.4.2",
+      "monai",
+      "scipy"
     ],
     classifiers=[              # Metadata
         "Programming Language :: Python :: 3",
