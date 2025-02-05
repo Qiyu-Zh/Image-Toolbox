@@ -5,15 +5,25 @@ import numpy as np
 from ipywidgets import interact
 from ipywidgets.widgets import IntSlider
 import matplotlib.pyplot as plt
-from scipy import ndimage
-import cv2
 import matplotlib
+import cv2
 import os 
 import shutil
+from totalsegmentator.python_api import totalsegmentator
 from skimage.metrics import structural_similarity 
+from scipy import ndimage
 import ants
 import monai
-def get_HU_error(y_pred, y, percentile = None, onehot = False, n_classes = None):
+import monai.metrics
+
+def compute_hu_distance():
+    for i in range(1, n_classes):
+        data.append(monai.metrics.compute_hausdorff_distance((y_pred == i), (y == i), include_background=False, distance_metric='euclidean', percentile=None, directed=False, spacing=None))
+    return data
+    
+    
+
+def get_HU_error(y_pred, y, onehot = False, n_classes = None):
     def get_onehot(label, n_classes):
         one_hot = np.eye(n_classes)[label]  # Shape: (1, 32, 32, 32, 6)
         one_hot = one_hot.transpose(3, 0, 1, 2)
@@ -24,7 +34,68 @@ def get_HU_error(y_pred, y, percentile = None, onehot = False, n_classes = None)
     if onehot is False:
         y = get_onehot(y, n_classes)  # Shape: (1, 32, 32, 32, 6)
         y_pred = get_onehot(y_pred, n_classes) 
-    return monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, distance_metric='euclidean', percentile=percentile, directed=False, spacing=None)
+    return monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, distance_metric='euclidean', percentile=None, directed=False, spacing=None)    
+    
+    
+def erode3d(mask=np.ones((6, 6, 6)), size=2):
+    # Ensure mask is boolean
+    mask = mask[:]
+    
+    # Create a 3D structuring element
+    structure = np.ones((2 * size + 1, 2 * size + 1, 2 * size + 1), dtype=bool)
+    
+    # Perform binary erosion
+    eroded_mask = ndimage.binary_erosion(mask, structure=structure).astype(mask.dtype)
+    
+    return eroded_mask
+
+def plot3d(CFR_crop, mask = None, vmax = 2, sample_rate = 5):
+    matplotlib.use('module://ipympl.backend_nbagg')
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.add_subplot(111, projection="3d")
+
+    x, y, z = np.indices(CFR_crop.shape)
+
+    # Filter the coordinates and CFR values using the mask
+    if mask:
+        mask = mask[:]
+        mask = mask - erode3d(mask, size = 1)
+        mask = mask.astype(bool)
+        mask_indices = np.where(mask)
+
+    else:
+        mask_indices = CFR_crop[:].nonzero()
+    x_masked = x[mask_indices]
+    y_masked = y[mask_indices]
+    z_masked = z[mask_indices]
+    CFR_masked = CFR_crop[mask_indices]
+
+    x_masked = x_masked[::sample_rate]
+    y_masked = y_masked[::sample_rate]
+    z_masked = z_masked[::sample_rate]
+    CFR_masked = CFR_masked[::sample_rate]
+
+    ax.set_xlabel("X-axis")
+    ax.set_ylabel("Y-axis")
+    ax.set_zlabel("Z-axis")
+    ax.set_title("Interactive 3D CFR Visualization")
+    # Plot only the masked values
+    scatter = ax.scatter(
+        x_masked,
+        y_masked,
+        z_masked,
+        c=CFR_masked,
+        cmap="jet",
+        vmin=0,
+        vmax=vmax,
+        s=1
+    )
+
+    # Add a colorbar and adjust its position
+    colorbar = fig.colorbar(scatter, ax=ax, shrink=0.6, aspect=15, pad=0.1)
+    colorbar.set_label("CFR Intensity")
+    plt.show()
+    
     
 def get_contour(binary_mask):
 
@@ -35,21 +106,6 @@ def get_contour(binary_mask):
     cv2.drawContours(contour_only_mask, contours, -1, 1, 1)  
     return contour_only_mask
 
-def erode(mask = np.ones((6, 6)), size = 2):
-    structure = np.ones((2*size + 1, 2*size + 1))
-    # Erode the mask
-    eroded_mask = ndimage.binary_erosion(mask, structure).astype(mask.dtype)
-    return eroded_mask
-
-def calculate_mean_hu(dcm_rest, dcm_mask_rest, bolus_rest_init):
-    idxes =  [i for i in range(dcm_rest.shape[2]) if np.sum(dcm_mask_rest[:, :, i]) > 100]
-    slice_idx = max([(tool.ssim(dcm_rest[:,:,i], bolus_rest_init), i) for i in idxes])[1]
-    print(slice_idx)
-    reg_ss_rest = ants.registration(fixed = ants.from_numpy(dcm_rest[:, :, slice_idx]) , moving = ants.from_numpy(bolus_rest_init), type_of_transform ='SyNAggro')['warpedmovout']
-    print(slice_idx, np.sum(dcm_mask_rest[:, :, slice_idx]))
-    mask = erode(dcm_mask_rest[:, :, slice_idx], size = 2).astype(bool)
-    HD_rest = np.mean(reg_ss_rest[:][mask])
-    return HD_rest
 
 def resize(image_path, target_size, output_path = None):
     image = sitk.ReadImage(image_path)
@@ -132,12 +188,12 @@ def plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
     return masked_mask
 
 
-def list_display(img_list, name = "", read_dcm = False):
+def list_display(img_list, name = "", vmax = 300, cmap = 'jet', read_dcm = False):
 
     
     if read_dcm:
         img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
-    max_slices_contrast = max(img_list, key = lambda x: x.shape[0]).shape[0]
+    max_slices_contrast = max(img_list, key = lambda x: x.shape[2]).shape[2]
 
     contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
     def display_slice(contrast_slice_index, img_list, name):
@@ -146,11 +202,11 @@ def list_display(img_list, name = "", read_dcm = False):
         fig.suptitle(name + f'  Slice {contrast_slice_index}')
         for i, img in enumerate(img_list):
             if img is not None:
-                axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap='jet', vmax = 300)
+                axes[i].imshow(img[:,:,min(img.shape[2] - 1, contrast_slice_index)], cmap=cmap, vmin = 0, vmax = vmax)
                 axes[i].axis('off')
         plt.show()
+        
     def update(contrast_slice_index):
-
         display_slice(contrast_slice_index, img_list, name)
 
     widgets.interact(update, contrast_slice_index=contrast_slice_slider)
@@ -158,7 +214,6 @@ def list_display(img_list, name = "", read_dcm = False):
 
 def folders_display(img_list, name = "", read_dcm = False):
 
-    
     if read_dcm:
         img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
     max_slices_contrast = max(img_list, key = lambda x: x.shape[0]).shape[0]
@@ -181,7 +236,7 @@ def display_slice(contrast_slice_index, img_list, name):
     plt.show()
 
 
-def lists_display(img_lists, name = None, titles = None):
+def lists_display(img_lists, cmap = 'jet', name = None, titles = None):
     if name == None:
         name = ""
     if titles == None:
@@ -208,7 +263,7 @@ def lists_display(img_lists, name = None, titles = None):
             if imgs is not None:
                 
                 img = imgs[min(len(imgs),list_idx_slider)]
-                axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap='jet', vmax = vmaxs[i])
+                axes[i].imshow(img[min(img.shape[0] - 1, contrast_slice_index),:,:], cmap=cmap, vmax = vmaxs[i])
                 axes[i].axis('off')
                 axes[i].set_title(titles[i])
         plt.show()
@@ -233,19 +288,7 @@ def make_if_dont_exist(folder_path,overwrite=False):
             os.makedirs(folder_path)
     else:
         os.makedirs(folder_path)
-def make_if_dont_exist(folder_path,overwrite=False):
-    """
-    creates a folder if it does not exists
-    input: 
-    folder_path : relative path of the folder which needs to be created
-    over_write :(default: False) if True overwrite the existing folder 
-    """
-    if os.path.exists(folder_path):
-        if overwrite:
-            shutil.rmtree(folder_path)
-            os.makedirs(folder_path)
-    else:
-        os.makedirs(folder_path)
+
 def load_3d_2d(dcm_file, output_path):
     make_if_dont_exist(output_path)
     # Read the 3D DICOM image using SimpleITK
@@ -276,13 +319,13 @@ def ssim(np_image1, np_image2):
     data_range = np.max([np_image1.max(), np_image2.max()]) - np.min([np_image1.min(), np_image2.min()])
     return structural_similarity(np_image1, np_image2, data_range=data_range)
     
-def delete_is_exist(file_path):
+def delete_if_exist(file_path):
     if os.path.exists(file_path):
         os.remove(file_path)
         print(f"File {file_path} has been deleted.")
     else:
         print(f"File {file_path} does not exist.")
-
+        
 def sitk2ant(img, reverse = False):
     if reverse == True:
         ants.image_write(img, "tmp.nii")
@@ -295,42 +338,10 @@ def sitk2ant(img, reverse = False):
         delete_if_exist("tmp.nii")
         return dcm
     
-def plot3d(CFR_crop, vmax = 3.5, sample_rate = 5):
-    matplotlib.use('module://ipympl.backend_nbagg')
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.add_subplot(111, projection="3d")
-
-    x, y, z = np.indices(CFR_crop.shape)
-
-    # Filter the coordinates and CFR values using the mask
-    mask_indices = CFR_crop[:].nonzero()
-    x_masked = x[mask_indices]
-    y_masked = y[mask_indices]
-    z_masked = z[mask_indices]
-    CFR_masked = CFR_crop[mask_indices]
-
-    x_masked = x_masked[::sample_rate]
-    y_masked = y_masked[::sample_rate]
-    z_masked = z_masked[::sample_rate]
-    CFR_masked = CFR_masked[::sample_rate]
-
-    ax.set_xlabel("X-axis")
-    ax.set_ylabel("Y-axis")
-    ax.set_zlabel("Z-axis")
-    ax.set_title("Interactive 3D CFR Visualization")
-    # Plot only the masked values
-    scatter = ax.scatter(
-        x_masked,
-        y_masked,
-        z_masked,
-        c=CFR_masked,
-        cmap="jet",
-        vmin=0,
-        vmax=vmax,
-        s=1
-    )
-
-    # Add a colorbar and adjust its position
-    colorbar = fig.colorbar(scatter, ax=ax, shrink=0.6, aspect=15, pad=0.1)
-    colorbar.set_label("CFR Intensity")
-    plt.show()
+def erode(mask = np.ones((6, 6)), size = 2):
+    mask = mask[:]
+    structure = np.ones((2*size + 1, 2*size + 1))
+    # Erode the mask
+    eroded_mask = ndimage.binary_erosion(mask, structure).astype(mask.dtype)
+    return eroded_mask
+	
