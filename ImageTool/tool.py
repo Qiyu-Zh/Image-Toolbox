@@ -16,7 +16,8 @@ import ants
 import monai
 import monai.metrics
 
-def compute_hu_distance():
+def compute_hu_distance(n_classes, y_pred, y):
+    data = []
     for i in range(1, n_classes):
         data.append(monai.metrics.compute_hausdorff_distance((y_pred == i), (y == i), include_background=False, distance_metric='euclidean', percentile=None, directed=False, spacing=None))
     return data
