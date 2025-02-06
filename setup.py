@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='Image-Toolbox',
+    name='ImageTool',
     version="0.1.0",
     description="A short description of your package",
     packages=find_packages(),  # Automatically find and include your package
@@ -19,5 +19,5 @@ setup(
     classifiers=[              # Metadata
         "Programming Language :: Python :: 3",
     ],
-    python_requires='>=3.8',
+    python_requires'>=3.8',
 )
