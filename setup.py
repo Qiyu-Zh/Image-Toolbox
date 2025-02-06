@@ -8,7 +8,7 @@ setup(
     install_requires=[         # List of dependencies
       "SimpleITK",
       "ipywidgets",
-      "matplotlib",
+      "matplotlib==3.5.1",
       "numpy==1.25",
       "opencv-python",
       "scikit-image",
