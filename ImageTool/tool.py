@@ -18,6 +18,93 @@ import nibabel as nib
 import nibabel.processing
 from nibabel.orientations import io_orientation, axcodes2ornt, ornt_transform
 
+import SimpleITK as sitk
+
+def demons_registration(
+    fixed_image, moving_image, fixed_mask=None, moving_mask=None, fixed_points=None, moving_points=None
+):
+    registration_method = sitk.ImageRegistrationMethod()
+
+    # Create initial identity transformation.
+    transform_to_displacement_field_filter = sitk.TransformToDisplacementFieldFilter()
+    transform_to_displacement_field_filter.SetReferenceImage(fixed_image)
+    
+    initial_transform = sitk.DisplacementFieldTransform(
+        transform_to_displacement_field_filter.Execute(sitk.Transform())
+    )
+
+    # Regularization (update field - viscous, total field - elastic).
+    initial_transform.SetSmoothingGaussianOnUpdate(
+        varianceForUpdateField=0.0, varianceForTotalField=2.0
+    )
+
+    registration_method.SetInitialTransform(initial_transform)
+
+    # Set Demons metric
+    registration_method.SetMetricAsDemons(10)  # intensities are equal if diff < 10HU
+
+    # Provide masks if available
+    if fixed_mask is not None:
+        registration_method.SetMetricFixedMask(fixed_mask)
+    if moving_mask is not None:
+        registration_method.SetMetricMovingMask(moving_mask)
+
+    # Multi-resolution framework.
+    registration_method.SetShrinkFactorsPerLevel(shrinkFactors=[4, 2, 1])
+    registration_method.SetSmoothingSigmasPerLevel(smoothingSigmas=[8, 4, 0])
+
+    registration_method.SetInterpolator(sitk.sitkLinear)
+    
+    # Optimizer
+    registration_method.SetOptimizerAsGradientDescent(
+        learningRate=1.0,
+        numberOfIterations=20,
+        convergenceMinimumValue=1e-6,
+        convergenceWindowSize=10,
+    )
+    registration_method.SetOptimizerScalesFromPhysicalShift()
+
+    # If corresponding points are given, display similarity metric and TRE
+    if fixed_points and moving_points:
+        registration_method.AddCommand(
+            sitk.sitkStartEvent, rc.metric_and_reference_start_plot
+        )
+        registration_method.AddCommand(
+            sitk.sitkEndEvent, rc.metric_and_reference_end_plot
+        )
+        registration_method.AddCommand(
+            sitk.sitkIterationEvent,
+            lambda: rc.metric_and_reference_plot_values(
+                registration_method, fixed_points, moving_points
+            ),
+        )
+
+    # Execute the registration
+    final_transform = registration_method.Execute(fixed_image, moving_image)
+
+    # Apply the transformation to the moving image
+    registered_moving_image = sitk.Resample(
+        moving_image,
+        fixed_image,  # Reference space
+        final_transform,
+        sitk.sitkLinear,  # Interpolation method for images
+        0.0,  # Default pixel value for regions outside original image
+        moving_image.GetPixelID()
+    )
+
+    # Apply the transformation to the multi-label moving mask if given
+    registered_moving_mask = None
+    if moving_mask is not None:
+        registered_moving_mask = sitk.Resample(
+            moving_mask,
+            fixed_image,  # Reference space
+            final_transform,
+            sitk.sitkNearestNeighbor,  # Nearest neighbor to preserve labels
+            0,  # Background value remains 0
+            moving_mask.GetPixelID()
+        )
+
+    return final_transform, registered_moving_image, registered_moving_mask
 
 def as_closest_canonical_nifti(path_in, path_out):
     """
