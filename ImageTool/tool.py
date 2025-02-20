@@ -190,16 +190,37 @@ def crop_with_bbox(image_path, bbox, output_path = None):
         sitk.WriteImage(cropped_image, output_path)
     return cropped_image
   
-def load_2d_3d(dicom_folder, output_path = None):
-    # Use SimpleITK to read the DICOM series
+def load_2d_3d(dicom_input, output_path=None):
+    """
+    Convert a folder of DICOM files or a list of DICOM file paths into a 3D NIfTI image.
+    
+    Parameters:
+        dicom_input (str or list): Either a folder containing DICOM files or a list of file paths.
+        output_path (str, optional): Path to save the output NIfTI file.
+
+    Returns:
+        sitk.Image: The 3D image.
+    """
     reader = sitk.ImageSeriesReader()
-    # Get the list of DICOM file names from the directory
-    dicom_files = reader.GetGDCMSeriesFileNames(dicom_folder)
+
+    if isinstance(dicom_input, str) and os.path.isdir(dicom_input):
+        # If dicom_input is a folder, get the list of DICOM files
+        dicom_files = reader.GetGDCMSeriesFileNames(dicom_input)
+    elif isinstance(dicom_input, list) and all(os.path.isfile(f) for f in dicom_input):
+        # If dicom_input is a list of files, use it directly
+        dicom_files = dicom_input
+    else:
+        raise ValueError("dicom_input must be a valid folder path or a list of file paths.")
+
     # Load the DICOM series
     reader.SetFileNames(dicom_files)
     image = reader.Execute()
+
+    # Save as NIfTI if output_path is provided
     if output_path:
         sitk.WriteImage(image, output_path)
+        print(f"3D NIfTI saved at: {output_path}")
+
     return image
 
 def plot_contour(mask_for_cv, ax, color = "red", label = None):
