@@ -1,24 +1,29 @@
-import SimpleITK as sitk
+# Core imaging and display libraries
+import SimpleITK as sitk # For medical image I/O and registration
+import ants  # Advanced Normalization Tools for image registration
+import nibabel as nib # For working with NIfTI format
+import nibabel.processing
+from nibabel.orientations import io_orientation, axcodes2ornt, ornt_transform
+
+# Visualization and interactivity
 import ipywidgets as widgets
 from IPython.display import display
-import numpy as np
 from ipywidgets import interact
 from ipywidgets.widgets import IntSlider
 import matplotlib.pyplot as plt
 import matplotlib
+
+# General utilities
+import numpy as np
 import cv2
 import os 
 import shutil
-from skimage.metrics import structural_similarity 
+from skimage.metrics import structural_similarity  # For SSIM calculation
 from scipy import ndimage
-import ants
+
+# MONAI: Medical imaging deep learning utilities
 import monai
 import monai.metrics
-import nibabel as nib
-import nibabel.processing
-from nibabel.orientations import io_orientation, axcodes2ornt, ornt_transform
-
-import SimpleITK as sitk
 
 def demons_registration(
     fixed_image, moving_image, fixed_mask=None, moving_mask=None, fixed_points=None, moving_points=None
@@ -105,15 +110,21 @@ def demons_registration(
         )
 
     return final_transform, registered_moving_image, registered_moving_mask
+# ============================
+# Orientation and NIfTI Tools
+# ============================
 
 def as_closest_canonical_nifti(path_in, path_out):
     """
-    Convert the given nifti file to the closest canonical nifti file.
+    Converts a NIfTI image to the closest canonical orientation (RAS).
+    
+    Parameters:
+        path_in (str): Input NIfTI file path.
+        path_out (str): Output file path to save the reoriented image.
     """
     img_in = nib.load(path_in)
     img_out = nib.as_closest_canonical(img_in)
     nib.save(img_out, path_out)
-
 
 def undo_canonical(img_can, img_orig):
     img_ornt = io_orientation(img_orig.affine)
@@ -129,12 +140,31 @@ def undo_canonical(img_can, img_orig):
 
 
 def undo_canonical_nifti(path_in_can, path_in_orig, path_out):
+    """
+    Reverts a canonicalized NIfTI image back to the original orientation.
+
+    Parameters:
+        path_in_can (str): Canonicalized NIfTI path.
+        path_in_orig (str): Original NIfTI path (provides orientation reference).
+        path_out (str): Output file path for reverted image.
+    """
     img_can = nib.load(path_in_can)
     img_orig = nib.load(path_in_orig)
     img_out = undo_canonical(img_can, img_orig)
     nib.save(img_out, path_out)
 	
 def compute_hu_distance(n_classes, y_pred, y):
+    """
+    Computes Hausdorff distance between predicted and ground truth labels.
+
+    Parameters:
+        n_classes (int): Number of label classes (excluding background).
+        y_pred (ndarray): Predicted label volume.
+        y (ndarray): Ground truth label volume.
+
+    Returns:
+        List of Hausdorff distances for each class.
+    """
     data = []
     for i in range(1, n_classes):
         data.append(monai.metrics.compute_hausdorff_distance((y_pred == i), (y == i), include_background=False, distance_metric='euclidean', percentile=None, directed=False, spacing=None))
@@ -143,6 +173,18 @@ def compute_hu_distance(n_classes, y_pred, y):
     
 
 def get_HU_error(y_pred, y, onehot = False, n_classes = None):
+    """
+    Computes Hausdorff distance with optional one-hot encoding support.
+
+    Parameters:
+        y_pred (ndarray): Predicted labels or one-hot encoded array.
+        y (ndarray): Ground truth labels or one-hot encoded array.
+        onehot (bool): Whether input arrays are already one-hot encoded.
+        n_classes (int): Number of classes, required if onehot=False.
+
+    Returns:
+        Hausdorff distance (tensor).
+    """
     def get_onehot(label, n_classes):
         one_hot = np.eye(n_classes)[label]  # Shape: (1, 32, 32, 32, 6)
         one_hot = one_hot.transpose(3, 0, 1, 2)
@@ -153,10 +195,23 @@ def get_HU_error(y_pred, y, onehot = False, n_classes = None):
     if onehot is False:
         y = get_onehot(y, n_classes)  # Shape: (1, 32, 32, 32, 6)
         y_pred = get_onehot(y_pred, n_classes) 
-    return monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, distance_metric='euclidean', percentile=None, directed=False, spacing=None)    
-    
+    return monai.metrics.compute_hausdorff_distance(y_pred, y, include_background=False, distance_metric='euclidean', percentile=None, directed=False, spacing=None) 
+	
+# ============================
+# Morphological Operations
+# ============================    
     
 def erode3d(mask=np.ones((6, 6, 6)), size=2):
+    """
+    Perform 3D binary erosion on a mask.
+
+    Parameters:
+        mask (ndarray): 3D binary mask.
+        size (int): Radius of erosion kernel.
+
+    Returns:
+        ndarray: Eroded mask.
+    """
     # Ensure mask is boolean
     mask = mask[:]
     
@@ -169,6 +224,15 @@ def erode3d(mask=np.ones((6, 6, 6)), size=2):
     return eroded_mask
 
 def plot3d(CFR_crop, mask = None, vmax = 2, sample_rate = 5):
+    """
+    Plot 3D scatter of volume data optionally filtered by a binary mask.
+
+    Parameters:
+        volume (ndarray): 3D scalar volume.
+        mask (ndarray): Optional binary mask.
+        vmax (float): Color scale maximum.
+        sample_rate (int): Sampling rate for plotting.
+    """
     matplotlib.use('module://ipympl.backend_nbagg')
     fig = plt.figure(figsize=(8, 8))
     ax = fig.add_subplot(111, projection="3d")
