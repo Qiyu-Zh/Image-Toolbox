@@ -393,8 +393,6 @@ def plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
 
 
 def list_display(img_list, name = "", vmax = 300, cmap = 'jet', read_dcm = False):
-
-    
     if read_dcm:
         img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
     max_slices_contrast = max(img_list, key = lambda x: x.shape[2]).shape[2]
@@ -429,6 +427,7 @@ def folders_display(img_list, name = "", read_dcm = False):
         display_slice(contrast_slice_index, img_list, name)
 
     widgets.interact(update, contrast_slice_index=contrast_slice_slider)
+	
 def display_slice(contrast_slice_index, img_list, name):
     n = len(img_list)
     fig, axes = plt.subplots(1, n, figsize=(6*n, 6))
@@ -459,6 +458,7 @@ def lists_display(img_lists, cmap = 'jet', name = None, titles = None):
 
     contrast_slice_slider = widgets.IntSlider(min=0, max=max_slices_contrast-1, step=1, value=0, description='Slice:')
     list_idx_slider = widgets.IntSlider(min=0, max=max_num-1, step=1, value=0, description='img_idx:')
+	
     def display_slice(contrast_slice_index, list_idx_slider):
         n = max(len(img_lists), 2)
         fig, axes = plt.subplots(1, n, figsize=(6*n, 6))
