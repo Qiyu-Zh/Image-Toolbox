@@ -393,6 +393,16 @@ def plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
 
 
 def list_display(img_list, name = "", vmax = 300, cmap = 'jet', read_dcm = False):
+    """
+    Display multiple 3D volumes side by side in a Jupyter widget with slice slider.
+
+    Parameters:
+        img_list (list): List of either file paths (if read_dcm=True) or numpy arrays.
+        name (str): Title prefix for displayed figures.
+        vmax (int): Max intensity for color scaling.
+        cmap (str): Matplotlib colormap.
+        read_dcm (bool): Whether img_list contains paths to DICOM/NIfTI files.
+    """
     if read_dcm:
         img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
     max_slices_contrast = max(img_list, key = lambda x: x.shape[2]).shape[2]
