@@ -28,6 +28,28 @@ plot_mask(mask_for_cv, ax, color = "Blues", alpha = 0.5, label = None):
 ```
 plot the mask inside the mask_for_cv to matplotlib ax. The mask should be binary.
 ```
-interactive_display(img_list, name = ""):
+list_display(img_list, name="", ...)
 ```
-Visualization for all 3d images in img_list by slice. Notice all image should have the same number of slices. Name is the title
+Visualize corresponding slices across multiple 3D volumes side-by-side in an interactive slider-based widget, supporting DICOM and NIfTI formats.
+```
+folders_display(img_list, name="", ...)
+```
+Similar to list_display, but assumes each item is a full 3D volume and displays axial slices interactively for folder-based batch inspection.
+```
+plot3d(volume, mask=None, ...)
+```
+Plots a 3D scatter of intensity values from a volume, optionally masked and downsampled, providing quick insight into spatial distribution.
+```
+load_2d_3d(dicom_input, output_path=None)
+```
+Converts a DICOM series or list of slices into a single 3D volume, enabling standardized volumetric analysis.
+```
+load_3d_2d(dcm_file, output_path)
+```
+Slices a 3D DICOM volume into 2D NIfTI slices while preserving correct spatial metadata (origin, spacing).
+```
+erode3d(mask, size=2)
+```
+Performs 3D binary erosion on segmentation masks to refine region boundaries or isolate structures.
+
+
