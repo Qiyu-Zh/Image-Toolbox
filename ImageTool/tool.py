@@ -425,7 +425,14 @@ def list_display(img_list, name = "", vmax = 300, cmap = 'jet', read_dcm = False
 
 
 def folders_display(img_list, name = "", read_dcm = False):
+    """
+    Display a list of 3D volumes from folders or numpy arrays using axial slice navigation.
 
+    Parameters:
+        img_list (list): List of volume paths or numpy arrays.
+        name (str): Figure title prefix.
+        read_dcm (bool): If True, will read images from DICOM/NIfTI files.
+    """
     if read_dcm:
         img_list = [sitk.GetArrayFromImage(sitk.ReadImage(dcm_file)) for dcm_file in img_list]
     max_slices_contrast = max(img_list, key = lambda x: x.shape[0]).shape[0]
@@ -439,6 +446,14 @@ def folders_display(img_list, name = "", read_dcm = False):
     widgets.interact(update, contrast_slice_index=contrast_slice_slider)
 	
 def display_slice(contrast_slice_index, img_list, name):
+    """
+    Helper function to plot one slice across multiple volumes.
+
+    Parameters:
+        contrast_slice_index (int): Index of the slice to display.
+        img_list (list): List of 3D numpy arrays.
+        name (str): Figure title prefix.
+    """
     n = len(img_list)
     fig, axes = plt.subplots(1, n, figsize=(6*n, 6))
     fig.suptitle(name + f'  Slice {contrast_slice_index}')
@@ -450,6 +465,15 @@ def display_slice(contrast_slice_index, img_list, name):
 
 
 def lists_display(img_lists, cmap = 'jet', name = None, titles = None):
+    """
+    Display interactive visualization for multiple lists of image volumes.
+
+    Parameters:
+        img_lists (list): Nested list of images or paths. Outer list is category/group.
+        cmap (str): Matplotlib colormap.
+        name (str): Optional overall title.
+        titles (list): Optional list of titles per group.
+    """
     if name == None:
         name = ""
     if titles == None:
